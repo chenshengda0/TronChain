@@ -9,4 +9,4 @@ WORKDIR /mnt
 
 EXPOSE 9527
 
-CMD yarn && yarn current && tail -f /dev/null
+CMD yarn && yarn current >> /mnt/server.log && tail -f /dev/null
