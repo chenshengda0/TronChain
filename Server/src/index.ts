@@ -271,9 +271,9 @@ const Common = Object.defineProperties( {
 } ) as any;
 
 ;(async function(){
-    /*
     //获取账户信息
-    const initBlock = 75242707;
+    /*
+    const initBlock = 75246304;
     const totalTasks = 60000;
     const tasksPerWorker = 30000;
     if (cluster.isMaster) {
@@ -298,6 +298,8 @@ const Common = Object.defineProperties( {
             //process.exit(0); // 处理完退出
         });
     }
-        */
-       await Common.current()
+    */
+    //await Common.showAccountBalanceOf(75246304, 75276304)
+    await Common.showAccountBalanceOf(75276304, 75306304)
+    //await Common.current()
 })();
