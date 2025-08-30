@@ -1,0 +1,102 @@
+# version: '3'
+
+networks:
+  dev-runtime:
+    driver:
+        bridge
+
+
+# volumes:
+#   mongo-data:
+#   mysql-data:
+
+services:
+  dex-mongodb:
+    image: mongo:latest
+    container_name: dex-mongodb
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - /Users/chenshengda/Desktop/FlashSwap/Runtime/mongo/backup:/data/backup:rw
+      - /Users/chenshengda/Desktop/FlashSwap/Runtime/mongo/db:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: a123456.
+    networks:
+      - dev-runtime
+
+  # dex-ganache:
+  #   image: trufflesuite/ganache:v7.9.2
+  #   container_name: dex-ganache
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - 8545:8545
+  #   command:
+  #     [
+  #       "--fork", "https://bsc-dataseed1.defibit.io/",
+  #       #"--fork", "https://bsc-dataseed.binance.org/",
+  #       "--chain.chainId", "56",
+  #       "--wallet.accounts", "0x11958bdee0d56ef95f0b651e7778e6d259f4913271880cfe170a4d8792affb8b,10000000000000000000000",
+  #       "--miner.blockTime", "0",
+  #       "--logging.verbose"
+  #     ]
+  #   networks:
+  #     - dev-runtime
+
+#PancakeSwapLottery 0x5aF6D33DE2ccEC94efb1bDF8f92Bd58085432d2c
+
+  dex-server:
+    container_name: dex-server
+    restart: always
+    build:
+      context: ./
+      dockerfile: server/Dockerfile
+    volumes:
+      - ../Server:/mnt
+    ports:
+      - 9527:9527
+    environment:
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - dev-runtime
+
+  # dev-mysql:
+  #   container_name: dev-mysql
+  #   # restart: always
+  #   # image: mariadb
+  #   build:
+  #     context: ./
+  #     dockerfile: mysql/Dockerfile
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=231510622abc
+  #   command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+  #   #command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+  #   ports:
+  #     - 3306:3306
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   networks:
+  #     - dev-runtime
+
+  # # #mysql 管理平台
+  # dev-phpmyadmin:
+  #   container_name: dev-phpmyadmin
+  #   restart: always
+  #   image: phpmyadmin
+  #   ports:
+  #     - 8080:80
+  #   environment:
+  #       #- PMA_ARBITRARY=1
+  #       - PMA_HOST=dev-mysql
+  #       - PMA_PORT=3306
+  #       - MYSQL_ROOT_PASSWORD=231510622abc
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   networks:
+  #     - dev-runtime
