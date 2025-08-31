@@ -18,8 +18,8 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - mongo-back:/data/backup:rw
-      - mongo-data:/data/db
+      - /Users/chenshengda/Desktop/FlashSwap/Runtime/mongo/backup:/data/backup:rw
+      - /Users/chenshengda/Desktop/FlashSwap/Runtime/mongo/db:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: a123456.

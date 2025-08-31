@@ -267,6 +267,105 @@ const Common = Object.defineProperties( {
             })
             return job;
         }
+    },
+    //校验上一个区块是否更新完
+    prev: {
+        value: async function(){
+            if (job) {
+                console.log("定时任务已存在，不要重复创建");
+                return job;
+            }
+            const that = this;
+            let RunningState = false;
+            job = schedule.scheduleJob( "*/2 * * * * *", async function(){
+                console.log( "===================================================获取当前区块数据=====================================================" )
+                mongoose.connect(process.env.MONGO_URL, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true,
+                }).then(() => {
+                    console.log('MongoDB connected');
+                }).catch((err:any) => {
+                    console.error('MongoDB connection error:', err);
+                });
+                try{
+                    const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
+                    const decimals = await USDTContract.decimals().call()
+                    const latestBlock = await that.tronWeb.trx.getCurrentBlock();
+                    //七天之前的区块
+                    //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
+                    //最新区块
+                    const lastBlock = latestBlock.block_header.raw_data.number - 1
+                    const cacheColl = mongoose.connection.collection("USDTTransferEvent");
+                    //记录交易日志
+                    let allEvents = [];
+                    //分页游标
+                    let fingerprint = null;
+                    while( true ){
+                        const history: any = await that.tronWeb.getEventResult(
+                            that.USDTAddress,
+                            {
+                                eventName: 'Transfer',
+                                blockNumber: lastBlock,
+                                limit: 200,
+                                fingerprint: fingerprint
+                            }
+                        );
+                        allEvents.push(...history.data);
+                        const meta = history.meta || {};
+                        fingerprint = meta.fingerprint; // 下一页要用这个
+                        if (!meta.links || !meta.links.next) {
+                            break; // 没有下一页就结束
+                        }
+                    }
+                    //写入mongodb
+                    const insertArr = Array.from(allEvents).map( (log) => ({
+                        block_number: log.block_number,
+                        block_timestamp: Date.now(),
+
+                        transaction_id: log.transaction_id,
+                        contract_address: log.contract_address,
+
+                        event: log.event,
+                        from: that.tronWeb.address.fromHex(log.result.from),
+
+                        fromHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.from) ),
+                        to: that.tronWeb.address.fromHex(log.result.to),
+
+                        toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
+                        amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
+                    }) );
+
+                    // insertArr 是你准备要插入的数据
+                    const txIds = insertArr.map(d => d.transaction_id);
+
+                    // 1. 查出已存在的 transaction_id
+                    const existDocs = await cacheColl.find(
+                        { transaction_id: { $in: txIds } },
+                        { projection: { transaction_id: 1 } }
+                    ).toArray();
+
+                    // 获取已经存在的
+                    const existIds = new Set(existDocs.map( (d:any) => d.transaction_id));
+
+                    // 2. 过滤掉已经存在的
+                    const newInsertArr = insertArr.filter(d => !existIds.has(d.transaction_id));
+
+                    // 3. 插入剩下的
+                    if (newInsertArr.length > 0) {
+                        await cacheColl.insertMany(newInsertArr);
+                        console.log( `区块${lastBlock}写入成功!` )
+                    }else{
+                        console.log( `区块${lastBlock}数据重复，写入失败!` )
+                    }
+                }catch(err:any){
+                    console.log( err.message )
+                }finally{
+                    RunningState = false;
+                    console.log( "===================================================获取当前区块数据=====================================================" )
+                }
+            })
+            return job;
+        }
     }
 } ) as any;
 
@@ -299,7 +398,8 @@ const Common = Object.defineProperties( {
         });
     }
     */
-    //await Common.showAccountBalanceOf(75246304, 75276304)
-    await Common.showAccountBalanceOf(75276304, 75306304)
+    //await Common.showAccountBalanceOf(75266775, 75276304)
+    await Common.showAccountBalanceOf(75297553, 75306304)
+    process.exit( 0 )
     //await Common.current()
 })();
