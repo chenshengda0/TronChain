@@ -19,7 +19,10 @@ const Common = Object.defineProperties( {
     tronWeb: new TronWeb({
         fullHost: 'https://api.trongrid.io',
         headers:{
-            "TRON-PRO-API-KEY": "87a64256-29a5-440a-8ae9-0beaac13165e",
+            //"TRON-PRO-API-KEY": "87a64256-29a5-440a-8ae9-0beaac13165e",
+            "TRON-PRO-API-KEY": "de138222-4e0d-4adf-9164-d6bfb8c8b58c",
+            //"TRON-PRO-API-KEY": "174b9c16-7463-4f61-a58f-4e047b3313ce",
+            //"TRON-PRO-API-KEY": "2080d2eb-ac7b-441f-b8f4-0e1614e03777",
         },
         privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
     }),
@@ -352,6 +355,51 @@ const Common = Object.defineProperties( {
             })
             return job;
         }
+    },
+    show:{
+        value: async function(account:string="TCNTdakbmgSZasagGy7iBtB3awRs9uJya6"){
+            console.log( "===================================================查询资账户交易=====================================================" )
+            const that = this;
+            try{
+                const cacheColl = mongoose.connection.collection("USDTTransferEvent");
+                const oneDoc = await cacheColl.aggregate( [
+                    { $match: { 
+                        from: account,
+                        $expr: { $lt: [ { $toDouble: "$amount" }, 10 ] }
+                    } },
+                    
+                    { $group: { _id: null, tos: { $addToSet: "$to" } } },
+                    { $project: { _id: 0, tos: 1 } }
+                ] );
+                const oneDocs = await oneDoc.next();
+                //console.log( oneDocs )
+                //去除合约账户
+                
+                const oneDocss = oneDocs.tos.map( (row:any) => row !== "TWzvWGHxDUXRtR7ACFaKUZbgbJDiM8Lvcd" )
+                console.log( JSON.stringify( oneDocs.tos ) )
+
+
+                console.log( oneDocs.tos.length, oneDocss.length )
+                
+                const ans = await cacheColl.aggregate( [
+                    {         
+                        $match: { 
+                            to: { $in: oneDocs.tos },
+                            $expr: { $gt: [ { $toDouble: "$amount" }, 10 ] }
+                        }  
+                    },
+                ] );
+                for await ( const res of ans ){
+                    if (res.from !== "TWzvWGHxDUXRtR7ACFaKUZbgbJDiM8Lvcd"){
+                        console.log( res )
+                    }
+                }
+            }catch(err:any){
+                console.log( err.message )
+            }finally{
+                console.log( "===================================================查询资账户交易=====================================================" )
+            }
+        }
     }
 } ) as any;
 
@@ -384,12 +432,22 @@ const Common = Object.defineProperties( {
         });
     }
     */
-    //await Common.showAccountBalanceOf(75267099, 75272054)
-    //await Common.showAccountBalanceOf(75272105, 75276304)
+    await Common.showAccountBalanceOf(75331238, 75336117)
 
-    //await Common.showAccountBalanceOf(75297860, 75302771)
-    //await Common.showAccountBalanceOf(75302859, 75306304)
     
-    await Common.current()
-    process.exit( 0 )
+
+    //await Common.showAccountBalanceOf(75298062, 75306304)
+
+    //补几个区块
+    //await Common.showAccountBalanceOf(75320190, 75320933)
+    
+    //await Common.current()
+
+    //await Common.show();
+
+    //process.exit( 0 )
 })();
+
+/*
+db.USDTTransferEvent.aggregate([ { $match: { block_number: { $lt: 75336116 } } }, { $sort: { block_number: -1 } } ]);
+*/
