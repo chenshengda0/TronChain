@@ -4,6 +4,16 @@ const BigNumber = require( "bignumber.js" )
 const cluster = require('cluster');
 const schedule = require( "node-schedule" )
 
+mongoose.connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => {
+    console.log('MongoDB connected');
+}).catch((err:any) => {
+    console.error('MongoDB connection error:', err);
+});
+
+
 let job:any = null;
 const Common = Object.defineProperties( {
     tronWeb: new TronWeb({
@@ -66,14 +76,6 @@ const Common = Object.defineProperties( {
         value: async function( startBlock: number, toBlock: number, account:string = "TCNTdakbmgSZasagGy7iBtB3awRs9uJya6" ){
             console.log( "===================================================获取账户余额=====================================================" )
             const that = this;
-            mongoose.connect(process.env.MONGO_URL, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-            }).then(() => {
-                console.log('MongoDB connected');
-            }).catch((err:any) => {
-                console.error('MongoDB connection error:', err);
-            });
             try{
                 const hexAccount = that.tronWeb.address.toHex( account )
                 const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
@@ -180,14 +182,6 @@ const Common = Object.defineProperties( {
             let RunningState = false;
             job = schedule.scheduleJob( "*/2 * * * * *", async function(){
                 console.log( "===================================================获取当前区块数据=====================================================" )
-                mongoose.connect(process.env.MONGO_URL, {
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true,
-                }).then(() => {
-                    console.log('MongoDB connected');
-                }).catch((err:any) => {
-                    console.error('MongoDB connection error:', err);
-                });
                 try{
                     const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
                     const decimals = await USDTContract.decimals().call()
@@ -279,14 +273,6 @@ const Common = Object.defineProperties( {
             let RunningState = false;
             job = schedule.scheduleJob( "*/2 * * * * *", async function(){
                 console.log( "===================================================获取当前区块数据=====================================================" )
-                mongoose.connect(process.env.MONGO_URL, {
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true,
-                }).then(() => {
-                    console.log('MongoDB connected');
-                }).catch((err:any) => {
-                    console.error('MongoDB connection error:', err);
-                });
                 try{
                     const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
                     const decimals = await USDTContract.decimals().call()
@@ -398,8 +384,12 @@ const Common = Object.defineProperties( {
         });
     }
     */
-    //await Common.showAccountBalanceOf(75266775, 75276304)
-    await Common.showAccountBalanceOf(75297553, 75306304)
+    //await Common.showAccountBalanceOf(75267099, 75272054)
+    //await Common.showAccountBalanceOf(75272105, 75276304)
+
+    //await Common.showAccountBalanceOf(75297860, 75302771)
+    //await Common.showAccountBalanceOf(75302859, 75306304)
+    
+    await Common.current()
     process.exit( 0 )
-    //await Common.current()
 })();
