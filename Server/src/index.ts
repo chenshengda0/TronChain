@@ -76,7 +76,7 @@ const Common = Object.defineProperties( {
     ],
 }, {
     showAccountBalanceOf: {
-        value: async function( startBlock: number, toBlock: number, account:string = "TCNTdakbmgSZasagGy7iBtB3awRs9uJya6" ){
+        value: async function( blockArr:number[], account:string = "TCNTdakbmgSZasagGy7iBtB3awRs9uJya6" ){
             console.log( "===================================================获取账户余额=====================================================" )
             const that = this;
             try{
@@ -96,11 +96,13 @@ const Common = Object.defineProperties( {
                 //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
                 //最新区块
                 const lastBlock = latestBlock.block_header.raw_data.number
+                /*
                 const blockArr = Array.from( (function*(){
                     for( let i = startBlock; i <=  toBlock; ++i){
                         yield i;
                     }
                 })() )
+                */
                 //创建集合
                 const cacheColl = mongoose.connection.collection("USDTTransferEvent");
                 for  await( const block of  blockArr){
@@ -356,6 +358,45 @@ const Common = Object.defineProperties( {
             return job;
         }
     },
+    checkData: {
+        value: async function(){
+            console.log( "===================================================查询缺失区块=====================================================" )
+            const that = this;
+            try{
+                const cacheColl = mongoose.connection.collection("USDTTransferEvent");
+                const res = await cacheColl.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            minBlock: { $min: "$block_number" },
+                            maxBlock: { $max: "$block_number" }
+                        }
+                    }
+                ]);
+                const ans = await res.next();
+                console.log( ans )
+                const lists =  await cacheColl.aggregate([
+                    { $group: { _id: "$block_number" } },
+                    { $sort: { _id: 1 } }
+                ])
+                const exists:number[] = [];
+                for await( const row of lists ){
+                    exists.push( row._id )
+                }
+                const misss:number[] = [];
+                for( let i = ans.minBlock; i <= ans.maxBlock; ++i ){
+                    if( !exists.includes( i ) ){
+                        misss.push( i )
+                    }
+                }
+                return misss;
+            }catch(err:any){
+                console.log( err.message )
+            }finally{
+                console.log( "===================================================查询缺失区块=====================================================" )
+            }
+        }
+    },
     show:{
         value: async function(account:string="TCNTdakbmgSZasagGy7iBtB3awRs9uJya6"){
             console.log( "===================================================查询资账户交易=====================================================" )
@@ -432,10 +473,11 @@ const Common = Object.defineProperties( {
         });
     }
     */
-    await Common.showAccountBalanceOf(75331238, 75336117)
+    //await Common.showAccountBalanceOf(75331238, 75336117)
 
     
-
+    const lists = await Common.checkData();
+    await Common.showAccountBalanceOf(lists)
     //await Common.showAccountBalanceOf(75298062, 75306304)
 
     //补几个区块
