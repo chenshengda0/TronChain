@@ -312,7 +312,7 @@ const Common = Object.defineProperties( {
                     //写入mongodb
                     const insertArr = Array.from(allEvents).map( (log) => ({
                         block_number: log.block_number,
-                        block_timestamp: Date.now(),
+                        block_timestamp: Date.now() - 5 * 3000,
 
                         transaction_id: log.transaction_id,
                         contract_address: log.contract_address,
@@ -326,7 +326,7 @@ const Common = Object.defineProperties( {
                         toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
                         amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
                     }) );
-                    /*
+
                     // insertArr 是你准备要插入的数据
                     const txIds = insertArr.map(d => d.transaction_id);
 
@@ -341,10 +341,9 @@ const Common = Object.defineProperties( {
 
                     // 2. 过滤掉已经存在的
                     const newInsertArr = insertArr.filter(d => !existIds.has(d.transaction_id));
-                    */
                     // 3. 插入剩下的
-                    if (insertArr.length > 0) {
-                        await cacheColl.insertMany(insertArr);
+                    if (newInsertArr.length > 0) {
+                        await cacheColl.insertMany(newInsertArr);
                         console.log( `区块${lastBlock}写入成功!` )
                     }else{
                         console.log( `区块${lastBlock}数据重复，写入失败!` )

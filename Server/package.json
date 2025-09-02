@@ -7,6 +7,7 @@
   "scripts": {
     "build": "webpack",
     "start": "webpack && node ./build/index.js",
+    "address": "ts-node -r dotenv/config ./src/TronAddress.ts",
     "current": "ts-node -r dotenv/config ./src/current.ts",
     "prev": "ts-node -r dotenv/config ./src/prev.ts",
     "dev": "ts-node -r dotenv/config ./src/index.ts"

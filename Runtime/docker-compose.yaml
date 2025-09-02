@@ -47,39 +47,39 @@ services:
 
 #PancakeSwapLottery 0x5aF6D33DE2ccEC94efb1bDF8f92Bd58085432d2c
 
-  dex-current-server:
-    container_name: dex-current-server
-    restart: always
-    build:
-      context: ./
-      dockerfile: current_server/Dockerfile
-    volumes:
-      - ../Server:/mnt
-    ports:
-      - 9527:9527
-    environment:
-      - TZ=Asia/Shanghai
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    networks:
-      - dev-runtime
+  # dex-current-server:
+  #   container_name: dex-current-server
+  #   restart: always
+  #   build:
+  #     context: ./
+  #     dockerfile: current_server/Dockerfile
+  #   volumes:
+  #     - ../Server:/mnt
+  #   ports:
+  #     - 9527:9527
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   networks:
+  #     - dev-runtime
 
-  dex-prev-server:
-    container_name: dex-prev-server
-    restart: always
-    build:
-      context: ./
-      dockerfile: prev_server/Dockerfile
-    volumes:
-      - ../Server:/mnt
-    ports:
-      - 9528:9527
-    environment:
-      - TZ=Asia/Shanghai
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    networks:
-      - dev-runtime
+  # dex-prev-server:
+  #   container_name: dex-prev-server
+  #   restart: always
+  #   build:
+  #     context: ./
+  #     dockerfile: prev_server/Dockerfile
+  #   volumes:
+  #     - ../Server:/mnt
+  #   ports:
+  #     - 9528:9527
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   networks:
+  #     - dev-runtime
 
   # dev-mysql:
   #   container_name: dev-mysql

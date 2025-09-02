@@ -92,6 +92,7 @@ const Common = Object.defineProperties( {
                 console.log( "AccountHex: ", hexAccount )
                 console.log( "       TRX: ", trxBalanceOf )
                 console.log( "      USDT: ", USDTbalanceOf )
+                console.log( "缺失数据条数: ", blockArr.length )
                 const latestBlock = await that.tronWeb.trx.getCurrentBlock();
                 //七天之前的区块
                 //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
@@ -312,7 +313,7 @@ const Common = Object.defineProperties( {
                     //写入mongodb
                     const insertArr = Array.from(allEvents).map( (log) => ({
                         block_number: log.block_number,
-                        block_timestamp: Date.now(),
+                        block_timestamp: Date.now() - 5 * 3000,
 
                         transaction_id: log.transaction_id,
                         contract_address: log.contract_address,

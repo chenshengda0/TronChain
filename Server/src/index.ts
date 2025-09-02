@@ -92,6 +92,7 @@ const Common = Object.defineProperties( {
                 console.log( "AccountHex: ", hexAccount )
                 console.log( "       TRX: ", trxBalanceOf )
                 console.log( "      USDT: ", USDTbalanceOf )
+                console.log( "缺失数据条数: ", blockArr.length )
                 const latestBlock = await that.tronWeb.trx.getCurrentBlock();
                 //七天之前的区块
                 //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
@@ -133,7 +134,7 @@ const Common = Object.defineProperties( {
                     //写入mongodb
                     const insertArr = Array.from(allEvents).map( (log) => ({
                         block_number: log.block_number,
-                        block_timestamp: Date.now() - ( lastBlock - block ) * 3,
+                        block_timestamp: Date.now() - ( lastBlock - block ) * 3000,
 
                         transaction_id: log.transaction_id,
                         contract_address: log.contract_address,
@@ -312,7 +313,7 @@ const Common = Object.defineProperties( {
                     //写入mongodb
                     const insertArr = Array.from(allEvents).map( (log) => ({
                         block_number: log.block_number,
-                        block_timestamp: Date.now(),
+                        block_timestamp: Date.now() - 5 * 3000,
 
                         transaction_id: log.transaction_id,
                         contract_address: log.contract_address,
@@ -326,7 +327,6 @@ const Common = Object.defineProperties( {
                         toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
                         amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
                     }) );
-                    /*
                     // insertArr 是你准备要插入的数据
                     const txIds = insertArr.map(d => d.transaction_id);
 
@@ -341,10 +341,9 @@ const Common = Object.defineProperties( {
 
                     // 2. 过滤掉已经存在的
                     const newInsertArr = insertArr.filter(d => !existIds.has(d.transaction_id));
-                    */
                     // 3. 插入剩下的
-                    if (insertArr.length > 0) {
-                        await cacheColl.insertMany(insertArr);
+                    if (newInsertArr.length > 0) {
+                        await cacheColl.insertMany(newInsertArr);
                         console.log( `区块${lastBlock}写入成功!` )
                     }else{
                         console.log( `区块${lastBlock}数据重复，写入失败!` )
@@ -508,7 +507,12 @@ const Common = Object.defineProperties( {
     //await Common.showAccountBalanceOf(75331238, 75336117)
 
     
-    const lists = await Common.checkData();
+    //const lists = await Common.checkData();
+    
+    const lastBlock = 75237891;
+    const lists = Array.from( ( function*(){
+      for( let block =  lastBlock; block >= lastBlock - 30000; --block) yield block;  
+    } )() )
     await Common.showAccountBalanceOf(lists)
 
     //Common.createAccount(0,3)
