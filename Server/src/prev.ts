@@ -477,9 +477,7 @@ const Common = Object.defineProperties( {
 } ) as any;
 
 ;(async function(){
-    Common.prev();
-
-    //process.exit( 0 )
+    await Common.prev();
 })();
 
 export {};

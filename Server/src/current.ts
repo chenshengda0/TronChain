@@ -477,49 +477,7 @@ const Common = Object.defineProperties( {
 } ) as any;
 
 ;(async function(){
-    //获取账户信息
-    /*
-    const initBlock = 75246304;
-    const totalTasks = 60000;
-    const tasksPerWorker = 30000;
-    if (cluster.isMaster) {
-        console.log(`Master ${process.pid} is running`);
-
-        // 计算需要启动多少个 worker
-        const numWorkers = Math.ceil(totalTasks / tasksPerWorker);
-
-        for (let i = 0; i < numWorkers; i++) {
-            const worker = cluster.fork({ WORKER_INDEX: i });
-            worker.send({ start: initBlock + i * tasksPerWorker, end: Math.min(initBlock + (i + 1) * tasksPerWorker, initBlock + totalTasks) });
-        }
-
-        cluster.on('exit', (worker:any, code:any, signal:any) => {
-            console.log(`Worker ${worker.process.pid} exited`);
-        });
-    } else {
-        process.on('message', async (msg:any) => {
-            const { start, end } = msg;
-            console.log(`Worker ${process.pid} processing tasks ${start} to ${end - 1}`);
-            await Common.showAccountBalanceOf(start, end)
-            //process.exit(0); // 处理完退出
-        });
-    }
-    */
-    //await Common.showAccountBalanceOf(75331238, 75336117)
-
-    
-    const lists = await Common.checkData();
-    await Common.showAccountBalanceOf(lists)
-
-    //Common.createAccount(0,3)
-    //await Common.showAccountBalanceOf(75298062, 75306304)
-
-    //补几个区块
-    //await Common.showAccountBalanceOf(75320190, 75320933)
-    
-    //await Common.current()
-
-    //await Common.show();
+    await Common.current();
 
     //process.exit( 0 )
 })();
