@@ -19,7 +19,7 @@ const Common = Object.defineProperties( {
     tronWeb: new TronWeb({
         fullHost: 'https://api.trongrid.io',
         headers:{
-            "TRON-PRO-API-KEY": "2080d2eb-ac7b-441f-b8f4-0e1614e03777"
+            "TRON-PRO-API-KEY": "77b9c0d0-91e0-4c23-bdfa-1cc68557d65e"
             
             //"TRON-PRO-API-KEY": "87a64256-29a5-440a-8ae9-0beaac13165e",
             //"TRON-PRO-API-KEY": "77b9c0d0-91e0-4c23-bdfa-1cc68557d65e",
@@ -286,7 +286,7 @@ const Common = Object.defineProperties( {
                     //七天之前的区块
                     //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
                     //最新区块
-                    const lastBlock = latestBlock.block_header.raw_data.number - 1
+                    const lastBlock = latestBlock.block_header.raw_data.number - 5
                     const cacheColl = mongoose.connection.collection("USDTTransferEvent");
                     //记录交易日志
                     let allEvents = [];
@@ -326,7 +326,7 @@ const Common = Object.defineProperties( {
                         toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
                         amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
                     }) );
-                    /*
+                    
                     // insertArr 是你准备要插入的数据
                     const txIds = insertArr.map(d => d.transaction_id);
 
@@ -341,10 +341,10 @@ const Common = Object.defineProperties( {
 
                     // 2. 过滤掉已经存在的
                     const newInsertArr = insertArr.filter(d => !existIds.has(d.transaction_id));
-                    */
+                    
                     // 3. 插入剩下的
-                    if (insertArr.length > 0) {
-                        await cacheColl.insertMany(insertArr);
+                    if (newInsertArr.length > 0) {
+                        await cacheColl.insertMany(newInsertArr);
                         console.log( `区块${lastBlock}写入成功!` )
                     }else{
                         console.log( `区块${lastBlock}数据重复，写入失败!` )
@@ -477,54 +477,12 @@ const Common = Object.defineProperties( {
 } ) as any;
 
 ;(async function(){
-    //获取账户信息
-    /*
-    const initBlock = 75246304;
-    const totalTasks = 60000;
-    const tasksPerWorker = 30000;
-    if (cluster.isMaster) {
-        console.log(`Master ${process.pid} is running`);
-
-        // 计算需要启动多少个 worker
-        const numWorkers = Math.ceil(totalTasks / tasksPerWorker);
-
-        for (let i = 0; i < numWorkers; i++) {
-            const worker = cluster.fork({ WORKER_INDEX: i });
-            worker.send({ start: initBlock + i * tasksPerWorker, end: Math.min(initBlock + (i + 1) * tasksPerWorker, initBlock + totalTasks) });
-        }
-
-        cluster.on('exit', (worker:any, code:any, signal:any) => {
-            console.log(`Worker ${worker.process.pid} exited`);
-        });
-    } else {
-        process.on('message', async (msg:any) => {
-            const { start, end } = msg;
-            console.log(`Worker ${process.pid} processing tasks ${start} to ${end - 1}`);
-            await Common.showAccountBalanceOf(start, end)
-            //process.exit(0); // 处理完退出
-        });
-    }
-    */
-    //await Common.showAccountBalanceOf(75331238, 75336117)
-
-    
-    const lists = await Common.checkData();
-    await Common.showAccountBalanceOf(lists)
-
-    //Common.createAccount(0,3)
-    //await Common.showAccountBalanceOf(75298062, 75306304)
-
-    //补几个区块
-    //await Common.showAccountBalanceOf(75320190, 75320933)
-    
-    //await Common.current()
-
-    //await Common.show();
+    Common.prev();
 
     //process.exit( 0 )
 })();
 
-export {}
+export {};
 
 /*
 db.USDTTransferEvent.aggregate([ { $match: { block_number: { $lt: 75336116 } } }, { $sort: { block_number: -1 } } ]);
