@@ -426,7 +426,7 @@ const Common = Object.defineProperties( {
                 //去除合约账户
                 
                 const oneDocss = oneDocs.tos.map( (row:any) => row !== "TWzvWGHxDUXRtR7ACFaKUZbgbJDiM8Lvcd" )
-                console.log( JSON.stringify( oneDocs.tos ) )
+                //console.log( JSON.stringify( oneDocs.tos ) )
 
 
                 console.log( oneDocs.tos.length, oneDocss.length )
@@ -605,11 +605,11 @@ const Common = Object.defineProperties( {
     
     //const lists = await Common.checkData();
     
-    // const lastBlock = 75186848;
+    // const lastBlock = 75169628;
     // const lists = Array.from( ( function*(){
     //   for( let block =  lastBlock; block >= lastBlock - 60000; --block) yield block;  
     // } )() )
-    // await Common.showAccountBalanceOf(lists)
+    //await Common.showAccountBalanceOf(lists)
 
     //await Common.changeDate()
 

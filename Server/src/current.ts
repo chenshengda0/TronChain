@@ -184,14 +184,28 @@ const Common = Object.defineProperties( {
                 console.log("定时任务已存在，不要重复创建");
                 return job;
             }
+            const tronWeb = new TronWeb({
+                fullHost: 'https://api.trongrid.io',
+                headers:{
+                    "TRON-PRO-API-KEY": (function(){
+                        const keyStore = [
+                            "87a64256-29a5-440a-8ae9-0beaac13165e",
+                            "77b9c0d0-91e0-4c23-bdfa-1cc68557d65e"
+                        ];
+                        
+                        return keyStore[ parseInt( String( Date.now() / 7200000 ) ) % keyStore.length ]
+                    })()
+                },
+                privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
+            })
             const that = this;
             let RunningState = false;
             job = schedule.scheduleJob( "*/2 * * * * *", async function(){
                 console.log( "===================================================获取当前区块数据=====================================================" )
                 try{
-                    const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
+                    const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
                     const decimals = await USDTContract.decimals().call()
-                    const latestBlock = await that.tronWeb.trx.getCurrentBlock();
+                    const latestBlock = await tronWeb.trx.getCurrentBlock();
                     //最新区块
                     const lastBlock = latestBlock.block_header.raw_data.number
                     const cacheColl = mongoose.connection.collection("USDTTransferEvent");
@@ -207,7 +221,7 @@ const Common = Object.defineProperties( {
                         //分页游标
                         let fingerprint = null;
                         while( true ){
-                            const history: any = await that.tronWeb.getEventResult(
+                            const history: any = await tronWeb.getEventResult(
                                 that.USDTAddress,
                                 {
                                     eventName: 'Transfer',
