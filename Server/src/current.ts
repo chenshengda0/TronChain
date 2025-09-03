@@ -192,49 +192,58 @@ const Common = Object.defineProperties( {
                     const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
                     const decimals = await USDTContract.decimals().call()
                     const latestBlock = await that.tronWeb.trx.getCurrentBlock();
-                    //七天之前的区块
-                    //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
                     //最新区块
                     const lastBlock = latestBlock.block_header.raw_data.number
                     const cacheColl = mongoose.connection.collection("USDTTransferEvent");
-                    //记录交易日志
-                    let allEvents = [];
-                    //分页游标
-                    let fingerprint = null;
-                    while( true ){
-                        const history: any = await that.tronWeb.getEventResult(
-                            that.USDTAddress,
-                            {
-                                eventName: 'Transfer',
-                                blockNumber: lastBlock,
-                                limit: 200,
-                                fingerprint: fingerprint
+                    const lastBlocks = Array.from( (function*(){
+                        for( let start = lastBlock - 5; start <= lastBlock; ++start ){
+                            yield start;
+                        }
+                    })() )
+                    const insertArr:any[] = []
+                    for ( const block of lastBlocks ){
+                        //记录交易日志
+                        let allEvents = [];
+                        //分页游标
+                        let fingerprint = null;
+                        while( true ){
+                            const history: any = await that.tronWeb.getEventResult(
+                                that.USDTAddress,
+                                {
+                                    eventName: 'Transfer',
+                                    blockNumber: block,
+                                    limit: 200,
+                                    fingerprint: fingerprint
+                                }
+                            );
+                            allEvents.push(...history.data);
+                            const meta = history.meta || {};
+                            fingerprint = meta.fingerprint; // 下一页要用这个
+                            if (!meta.links || !meta.links.next) {
+                                break; // 没有下一页就结束
                             }
-                        );
-                        allEvents.push(...history.data);
-                        const meta = history.meta || {};
-                        fingerprint = meta.fingerprint; // 下一页要用这个
-                        if (!meta.links || !meta.links.next) {
-                            break; // 没有下一页就结束
+                        }
+                        const date = Date.now() - ( lastBlock - block ) * 3000;
+                        //遍历区块写入数组
+                        for( const log of allEvents ){
+                            insertArr.push( {
+                                block_number: log.block_number,
+                                block_timestamp: date,
+
+                                transaction_id: log.transaction_id,
+                                contract_address: log.contract_address,
+
+                                event: log.event,
+                                from: that.tronWeb.address.fromHex(log.result.from),
+
+                                fromHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.from) ),
+                                to: that.tronWeb.address.fromHex(log.result.to),
+
+                                toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
+                                amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
+                            } )
                         }
                     }
-                    //写入mongodb
-                    const insertArr = Array.from(allEvents).map( (log) => ({
-                        block_number: log.block_number,
-                        block_timestamp: Date.now(),
-
-                        transaction_id: log.transaction_id,
-                        contract_address: log.contract_address,
-
-                        event: log.event,
-                        from: that.tronWeb.address.fromHex(log.result.from),
-
-                        fromHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.from) ),
-                        to: that.tronWeb.address.fromHex(log.result.to),
-
-                        toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
-                        amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
-                    }) );
 
                     // insertArr 是你准备要插入的数据
                     const txIds = insertArr.map(d => d.transaction_id);
@@ -254,9 +263,9 @@ const Common = Object.defineProperties( {
                     // 3. 插入剩下的
                     if (newInsertArr.length > 0) {
                         await cacheColl.insertMany(newInsertArr);
-                        console.log( `区块${lastBlock}写入成功!` )
+                        console.log( `区块${lastBlocks[0]}-${lastBlocks.pop()}写入成功!` )
                     }else{
-                        console.log( `区块${lastBlock}数据重复，写入失败!` )
+                        console.log( `区块${lastBlocks[0]}-${lastBlocks.pop()}数据重复，写入失败!` )
                     }
                 }catch(err:any){
                     console.log( err.message )

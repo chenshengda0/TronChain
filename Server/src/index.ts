@@ -193,49 +193,58 @@ const Common = Object.defineProperties( {
                     const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
                     const decimals = await USDTContract.decimals().call()
                     const latestBlock = await that.tronWeb.trx.getCurrentBlock();
-                    //七天之前的区块
-                    //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
                     //最新区块
                     const lastBlock = latestBlock.block_header.raw_data.number
                     const cacheColl = mongoose.connection.collection("USDTTransferEvent");
-                    //记录交易日志
-                    let allEvents = [];
-                    //分页游标
-                    let fingerprint = null;
-                    while( true ){
-                        const history: any = await that.tronWeb.getEventResult(
-                            that.USDTAddress,
-                            {
-                                eventName: 'Transfer',
-                                blockNumber: lastBlock,
-                                limit: 200,
-                                fingerprint: fingerprint
+                    const lastBlocks = Array.from( (function*(){
+                        for( let start = lastBlock - 5; start <= lastBlock; ++start ){
+                            yield start;
+                        }
+                    })() )
+                    const insertArr:any[] = []
+                    for ( const block of lastBlocks ){
+                        //记录交易日志
+                        let allEvents = [];
+                        //分页游标
+                        let fingerprint = null;
+                        while( true ){
+                            const history: any = await that.tronWeb.getEventResult(
+                                that.USDTAddress,
+                                {
+                                    eventName: 'Transfer',
+                                    blockNumber: block,
+                                    limit: 200,
+                                    fingerprint: fingerprint
+                                }
+                            );
+                            allEvents.push(...history.data);
+                            const meta = history.meta || {};
+                            fingerprint = meta.fingerprint; // 下一页要用这个
+                            if (!meta.links || !meta.links.next) {
+                                break; // 没有下一页就结束
                             }
-                        );
-                        allEvents.push(...history.data);
-                        const meta = history.meta || {};
-                        fingerprint = meta.fingerprint; // 下一页要用这个
-                        if (!meta.links || !meta.links.next) {
-                            break; // 没有下一页就结束
+                        }
+                        const date = Date.now() - ( lastBlock - block ) * 3000;
+                        //遍历区块写入数组
+                        for( const log of allEvents ){
+                            insertArr.push( {
+                                block_number: log.block_number,
+                                block_timestamp: date,
+
+                                transaction_id: log.transaction_id,
+                                contract_address: log.contract_address,
+
+                                event: log.event,
+                                from: that.tronWeb.address.fromHex(log.result.from),
+
+                                fromHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.from) ),
+                                to: that.tronWeb.address.fromHex(log.result.to),
+
+                                toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
+                                amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
+                            } )
                         }
                     }
-                    //写入mongodb
-                    const insertArr = Array.from(allEvents).map( (log) => ({
-                        block_number: log.block_number,
-                        block_timestamp: Date.now(),
-
-                        transaction_id: log.transaction_id,
-                        contract_address: log.contract_address,
-
-                        event: log.event,
-                        from: that.tronWeb.address.fromHex(log.result.from),
-
-                        fromHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.from) ),
-                        to: that.tronWeb.address.fromHex(log.result.to),
-
-                        toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
-                        amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
-                    }) );
 
                     // insertArr 是你准备要插入的数据
                     const txIds = insertArr.map(d => d.transaction_id);
@@ -255,9 +264,9 @@ const Common = Object.defineProperties( {
                     // 3. 插入剩下的
                     if (newInsertArr.length > 0) {
                         await cacheColl.insertMany(newInsertArr);
-                        console.log( `区块${lastBlock}写入成功!` )
+                        console.log( `区块${lastBlocks[0]}-${lastBlocks.pop()}写入成功!` )
                     }else{
-                        console.log( `区块${lastBlock}数据重复，写入失败!` )
+                        console.log( `区块${lastBlocks[0]}-${lastBlocks.pop()}数据重复，写入失败!` )
                     }
                 }catch(err:any){
                     console.log( err.message )
@@ -429,6 +438,19 @@ const Common = Object.defineProperties( {
                             $expr: { $gt: [ { $toDouble: "$amount" }, 10 ] }
                         }  
                     },
+                    {
+                        $addFields: {
+                            block_date:{
+                                $dateToString: {
+                                    date: { 
+                                        $toDate: "$block_timestamp" 
+                                    },
+                                    format: "%Y-%m-%d %H:%M:%S",
+                                    timezone: "+08:00"   // 中国/北京时间
+                                }
+                            }
+                        }
+                    }
                 ] );
                 for await ( const res of ans ){
                     if (res.from !== "TWzvWGHxDUXRtR7ACFaKUZbgbJDiM8Lvcd"){
@@ -472,6 +494,80 @@ const Common = Object.defineProperties( {
                 console.log("===================================================创建近似地址=====================================================");
             }
         }
+    },
+    //批量修改时间戳
+    changeDate: {
+        value: async function(){
+            console.log( "=====================================修改时间戳==========================================" )
+            console.time( "changeDate" )
+            try{
+                const cacheColl = mongoose.connection.collection("USDTTransferEvent");
+                const res = await cacheColl.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            minBlock: { $min: "$block_number" },
+                            maxBlock: { $max: "$block_number" }
+                        }
+                    }
+                ]);
+                const ans = await res.next();
+                //console.log( ans )
+                const last = await cacheColl.aggregate( [
+                    {
+                        $match: {
+                            block_number: ans.maxBlock
+                        }
+                    },
+                    {
+                        $limit: 1
+                    }
+                ] )
+                const lastOneData = await last.next();
+                //console.log( lastOneData )
+
+                // const other = await cacheColl.aggregate( [
+                //     {
+                //         $match: {
+                //             block_number: {
+                //                 $lt: ans.maxBlock
+                //             }
+                //         }
+                //     }
+                // ] )
+
+                await cacheColl.updateMany(
+                    { block_number: { $lt: ans.maxBlock } },
+                    [
+                        {
+                        $set: {
+                            block_timestamp: {
+                            $subtract: [
+                                lastOneData.block_timestamp,
+                                { $multiply: [ { $subtract: [ lastOneData.block_number, "$block_number" ] }, 3000 ] }
+                            ]
+                            }
+                        }
+                        }
+                    ]
+                );
+                /*
+                for await( const o of other ){
+                    await cacheColl.updateOne(
+                        { _id: o._id },
+                        { $set: { block_timestamp: lastOneData.block_timestamp - (lastOneData.block_number - o.block_number) * 3000 } }
+                    )
+                    console.log( `${o.block_number}更新成功~` )
+                }
+                */
+
+            }catch(err:any){
+                console.log( err.message )
+            }finally{
+                console.timeEnd( "changeDate" )
+                console.log( "=====================================修改时间戳==========================================" )
+            }
+        }
     }
 } ) as any;
 
@@ -509,11 +605,15 @@ const Common = Object.defineProperties( {
     
     //const lists = await Common.checkData();
     
-    const lastBlock = 75237891;
-    const lists = Array.from( ( function*(){
-      for( let block =  lastBlock; block >= lastBlock - 30000; --block) yield block;  
-    } )() )
-    await Common.showAccountBalanceOf(lists)
+    // const lastBlock = 75186848;
+    // const lists = Array.from( ( function*(){
+    //   for( let block =  lastBlock; block >= lastBlock - 60000; --block) yield block;  
+    // } )() )
+    // await Common.showAccountBalanceOf(lists)
+
+    //await Common.changeDate()
+
+    //await Common.changeDate()
 
     //Common.createAccount(0,3)
     //await Common.showAccountBalanceOf(75298062, 75306304)
@@ -523,9 +623,9 @@ const Common = Object.defineProperties( {
     
     //await Common.current()
 
-    //await Common.show();
+    await Common.show();
 
-    //process.exit( 0 )
+    process.exit( 0 )
 })();
 
 export {}

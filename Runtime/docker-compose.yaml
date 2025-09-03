@@ -64,22 +64,22 @@ services:
     networks:
       - dev-runtime
 
-  dex-prev-server:
-    container_name: dex-prev-server
-    restart: always
-    build:
-      context: ./
-      dockerfile: prev_server/Dockerfile
-    volumes:
-      - ../Server:/mnt
-    ports:
-      - 9528:9527
-    environment:
-      - TZ=Asia/Shanghai
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    networks:
-      - dev-runtime
+  # dex-prev-server:
+  #   container_name: dex-prev-server
+  #   restart: always
+  #   build:
+  #     context: ./
+  #     dockerfile: prev_server/Dockerfile
+  #   volumes:
+  #     - ../Server:/mnt
+  #   ports:
+  #     - 9528:9527
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   networks:
+  #     - dev-runtime
 
   # dev-mysql:
   #   container_name: dev-mysql
