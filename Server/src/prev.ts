@@ -297,7 +297,7 @@ const Common = Object.defineProperties( {
             });
             let RunningState = false;
             job = schedule.scheduleJob( "*/3 * * * * *", async function(){
-                console.log( "===================================================获取当前区块数据=====================================================" )
+                console.log( "===================================================获取历史区块数据=====================================================" )
                 try{
                     const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
                     const decimals = await USDTContract.decimals().call()
@@ -394,7 +394,7 @@ const Common = Object.defineProperties( {
                     console.log( err.message )
                 }finally{
                     RunningState = false;
-                    console.log( "===================================================获取当前区块数据=====================================================" )
+                    console.log( "===================================================获取历史区块数据=====================================================" )
                 }
             })
             return job;
