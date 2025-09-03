@@ -296,7 +296,7 @@ const Common = Object.defineProperties( {
                 privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
             });
             let RunningState = false;
-            job = schedule.scheduleJob( "*/3 * * * * *", async function(){
+            job = schedule.scheduleJob( "*/30 * * * * *", async function(){
                 console.log( "===================================================获取历史区块数据=====================================================" )
                 try{
                     const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
@@ -316,7 +316,7 @@ const Common = Object.defineProperties( {
                         throw new Error( "break~" );
                     }
                     const blocks = Array.from( (function*(){
-                        for( let current = currentBlock.minBlock; current > currentBlock.minBlock - 3; --current ){
+                        for( let current = currentBlock.minBlock; current > currentBlock.minBlock - 30; --current ){
                             yield current;
                         }
                     })() )
