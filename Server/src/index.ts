@@ -24,6 +24,7 @@ const Common = Object.defineProperties( {
             //"TRON-PRO-API-KEY": "87a64256-29a5-440a-8ae9-0beaac13165e",
             //"TRON-PRO-API-KEY": "77b9c0d0-91e0-4c23-bdfa-1cc68557d65e",
             //"TRON-PRO-API-KEY": "2080d2eb-ac7b-441f-b8f4-0e1614e03777",
+            //"TRON-PRO-API-KEY": "39e1609b-c717-4c34-915a-308dff280504",
         },
         privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
     }),
@@ -80,20 +81,34 @@ const Common = Object.defineProperties( {
         value: async function( blockArr:number[], account:string = "TCNTdakbmgSZasagGy7iBtB3awRs9uJya6" ){
             console.log( "===================================================获取账户余额=====================================================" )
             const that = this;
+            const tronWeb = new TronWeb({
+                fullHost: 'https://api.trongrid.io',
+                headers:{
+                    "TRON-PRO-API-KEY": ( function(){
+                        const keyLists = [
+                            "2080d2eb-ac7b-441f-b8f4-0e1614e03777",
+                            "39e1609b-c717-4c34-915a-308dff280504",
+                        ];
+                        return keyLists[ parseInt( String( Date.now() / 7200000 ) ) % keyLists.length ]
+                    } )()
+                    
+                    //"TRON-PRO-API-KEY": "87a64256-29a5-440a-8ae9-0beaac13165e",
+                    //"TRON-PRO-API-KEY": "77b9c0d0-91e0-4c23-bdfa-1cc68557d65e",
+                    //"TRON-PRO-API-KEY": "2080d2eb-ac7b-441f-b8f4-0e1614e03777",
+                    //"TRON-PRO-API-KEY": "39e1609b-c717-4c34-915a-308dff280504",
+                },
+                privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
+            });
             try{
-                const hexAccount = that.tronWeb.address.toHex( account )
-                const USDTContract = await that.tronWeb.contract( that.USDTAbi, that.tronWeb.address.toHex( that.USDTAddress ) )
+                //const hexAccount = tronWeb.address.toHex( account )
+                const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
                 const usdtBalance = await USDTContract.balanceOf( account ).call()
                 const decimals = await USDTContract.decimals().call()
-                const USDTbalanceOf = new BigNumber( BigInt( usdtBalance ).toString() ).dividedBy( (BigInt(10)**BigInt(decimals)).toString() ).toFixed()
-                const trxBalance = await that.tronWeb.trx.getBalance( account );
-                const trxBalanceOf = new BigNumber( trxBalance ).dividedBy( 10**6 ).toFixed()
-                console.log( "   Account: ", account )
-                console.log( "AccountHex: ", hexAccount )
-                console.log( "       TRX: ", trxBalanceOf )
-                console.log( "      USDT: ", USDTbalanceOf )
+                //const USDTbalanceOf = new BigNumber( BigInt( usdtBalance ).toString() ).dividedBy( (BigInt(10)**BigInt(decimals)).toString() ).toFixed()
+                //const trxBalance = await that.tronWeb.trx.getBalance( account );
+                //const trxBalanceOf = new BigNumber( trxBalance ).dividedBy( 10**6 ).toFixed()
                 console.log( "缺失数据条数: ", blockArr.length )
-                const latestBlock = await that.tronWeb.trx.getCurrentBlock();
+                const latestBlock = await tronWeb.trx.getCurrentBlock();
                 //七天之前的区块
                 //const startBlock = latestBlock.block_header.raw_data.number - 3600*24*7/3;
                 //最新区块
@@ -113,7 +128,7 @@ const Common = Object.defineProperties( {
                     //分页游标
                     let fingerprint = null;
                     while( true ){
-                        const history: any = await that.tronWeb.getEventResult(
+                        const history: any = await tronWeb.getEventResult(
                             that.USDTAddress,
                             {
                                 eventName: 'Transfer',
@@ -140,12 +155,12 @@ const Common = Object.defineProperties( {
                         contract_address: log.contract_address,
 
                         event: log.event,
-                        from: that.tronWeb.address.fromHex(log.result.from),
+                        from: tronWeb.address.fromHex(log.result.from),
 
-                        fromHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.from) ),
-                        to: that.tronWeb.address.fromHex(log.result.to),
+                        fromHex: tronWeb.address.toHex( tronWeb.address.fromHex(log.result.from) ),
+                        to: tronWeb.address.fromHex(log.result.to),
 
-                        toHex: that.tronWeb.address.toHex( that.tronWeb.address.fromHex(log.result.to) ),
+                        toHex: tronWeb.address.toHex( tronWeb.address.fromHex(log.result.to) ),
                         amount: new BigNumber( BigInt( log.result.value ).toString() ).dividedBy( (BigInt( 10 )**BigInt( decimals )).toString() ).toFixed()
                     }) );
                     
@@ -603,13 +618,13 @@ const Common = Object.defineProperties( {
     //await Common.showAccountBalanceOf(75331238, 75336117)
 
     
-    //const lists = await Common.checkData();
+    const lists = await Common.checkData();
     
     // const lastBlock = 75169628;
     // const lists = Array.from( ( function*(){
     //   for( let block =  lastBlock; block >= lastBlock - 60000; --block) yield block;  
     // } )() )
-    //await Common.showAccountBalanceOf(lists)
+    await Common.showAccountBalanceOf(lists)
 
     //await Common.changeDate()
 
@@ -623,9 +638,9 @@ const Common = Object.defineProperties( {
     
     //await Common.current()
 
-    await Common.show();
+    //await Common.show();
 
-    process.exit( 0 )
+    //process.exit( 0 )
 })();
 
 export {}
