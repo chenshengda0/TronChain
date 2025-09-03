@@ -618,13 +618,13 @@ const Common = Object.defineProperties( {
     //await Common.showAccountBalanceOf(75331238, 75336117)
 
     
-    const lists = await Common.checkData();
+    //const lists = await Common.checkData();
     
-    // const lastBlock = 75169628;
+    // const lastBlock = 75169395;
     // const lists = Array.from( ( function*(){
-    //   for( let block =  lastBlock; block >= lastBlock - 60000; --block) yield block;  
+    //   for( let block =  lastBlock; block >= lastBlock - 300000; --block) yield block;  
     // } )() )
-    await Common.showAccountBalanceOf(lists)
+    // await Common.showAccountBalanceOf(lists)
 
     //await Common.changeDate()
 
@@ -638,7 +638,7 @@ const Common = Object.defineProperties( {
     
     //await Common.current()
 
-    //await Common.show();
+    await Common.show();
 
     //process.exit( 0 )
 })();

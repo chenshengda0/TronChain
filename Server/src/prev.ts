@@ -296,7 +296,7 @@ const Common = Object.defineProperties( {
                 privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
             });
             let RunningState = false;
-            job = schedule.scheduleJob( "*/30 * * * * *", async function(){
+            job = schedule.scheduleJob( "*/6 * * * * *", async function(){
                 console.log( "===================================================获取历史区块数据=====================================================" )
                 try{
                     const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
@@ -316,7 +316,7 @@ const Common = Object.defineProperties( {
                         throw new Error( "break~" );
                     }
                     const blocks = Array.from( (function*(){
-                        for( let current = currentBlock.minBlock; current > currentBlock.minBlock - 30; --current ){
+                        for( let current = currentBlock.minBlock - 1; current > currentBlock.minBlock - 6; --current ){
                             yield current;
                         }
                     })() )
@@ -367,7 +367,7 @@ const Common = Object.defineProperties( {
                             } )
                         }
                     }
-                    
+                    /*
                     // insertArr 是你准备要插入的数据
                     const txIds = insertArr.map(d => d.transaction_id);
 
@@ -382,10 +382,10 @@ const Common = Object.defineProperties( {
 
                     // 2. 过滤掉已经存在的
                     const newInsertArr = insertArr.filter(d => !existIds.has(d.transaction_id));
-                    
+                    */
                     // 3. 插入剩下的
-                    if (newInsertArr.length > 0) {
-                        await cacheColl.insertMany(newInsertArr);
+                    if (insertArr.length > 0) {
+                        await cacheColl.insertMany(insertArr);
                         console.log( `区块${blocks.pop()}-${blocks[0]}写入成功!` )
                     }else{
                         console.log( `区块${blocks.pop()}-${blocks[0]}数据重复，写入失败!` )
