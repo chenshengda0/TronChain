@@ -296,7 +296,7 @@ const Common = Object.defineProperties( {
                 privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
             });
             let RunningState = false;
-            job = schedule.scheduleJob( "*/2 * * * * *", async function(){
+            job = schedule.scheduleJob( "*/3 * * * * *", async function(){
                 console.log( "===================================================获取当前区块数据=====================================================" )
                 try{
                     const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
@@ -316,7 +316,7 @@ const Common = Object.defineProperties( {
                         throw new Error( "break~" );
                     }
                     const blocks = Array.from( (function*(){
-                        for( let current = currentBlock.minBlock; current >= currentBlock.minBlock - 5; --current ){
+                        for( let current = currentBlock.minBlock; current > currentBlock.minBlock - 3; --current ){
                             yield current;
                         }
                     })() )
@@ -347,10 +347,11 @@ const Common = Object.defineProperties( {
                                 break; // 没有下一页就结束
                             }
                         }
+                        const currentDate = Date.now() - ( lastBlock - block ) * 3000;
                         for( const log of allEvents ){
                             insertArr.push( {
                                 block_number: log.block_number,
-                                block_timestamp: Date.now() - 5 * 3000,
+                                block_timestamp: currentDate,
 
                                 transaction_id: log.transaction_id,
                                 contract_address: log.contract_address,
