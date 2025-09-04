@@ -193,14 +193,14 @@ const Common = Object.defineProperties( {
                             "77b9c0d0-91e0-4c23-bdfa-1cc68557d65e"
                         ];
                         
-                        return keyStore[ parseInt( String( Date.now() / 7200000 ) ) % keyStore.length ]
+                        return keyStore[ parseInt( String( Date.now() / 3600000 ) ) % keyStore.length ]
                     })()
                 },
                 privateKey: 'dd616f72eb2db8709f877708960b2c7543e888acc7af5fc72abb4befee17e2ab'
             })
             const that = this;
             let RunningState = false;
-            job = schedule.scheduleJob( "*/2 * * * * *", async function(){
+            job = schedule.scheduleJob( "*/3 * * * * *", async function(){
                 console.log( "===================================================获取当前区块数据=====================================================" )
                 try{
                     const USDTContract = await tronWeb.contract( that.USDTAbi, tronWeb.address.toHex( that.USDTAddress ) )
