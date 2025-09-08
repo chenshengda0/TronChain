@@ -2,3 +2,4 @@
 /LocalServer/node_modules
 /Server/server.log
 /Runtime/.env
+/Runtime/mongo-data/*
