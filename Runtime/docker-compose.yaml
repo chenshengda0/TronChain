@@ -5,11 +5,6 @@ networks:
     driver:
         bridge
 
-
-volumes:
-  mongo-data:
-  mongo-back:
-
 services:
   dex-mongodb:
     image: mongo:latest
@@ -18,51 +13,51 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - mongo-back:/data/backup:rw
-      - mongo-data:/data/db
+      - ./mongo-data/backup:/data/backup:rw
+      - ./mongo-data/db:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: a123456.
     networks:
       - dev-runtime
 
-  # dex-ganache:
-  #   image: trufflesuite/ganache:v7.9.2
-  #   container_name: dex-ganache
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - 8545:8545
-  #   command:
-  #     [
-  #       "--fork", "https://bsc-dataseed1.defibit.io/",
-  #       #"--fork", "https://bsc-dataseed.binance.org/",
-  #       "--chain.chainId", "56",
-  #       "--wallet.accounts", "0x11958bdee0d56ef95f0b651e7778e6d259f4913271880cfe170a4d8792affb8b,10000000000000000000000",
-  #       "--miner.blockTime", "0",
-  #       "--logging.verbose"
-  #     ]
-  #   networks:
-  #     - dev-runtime
+  dex-ganache:
+    image: trufflesuite/ganache:v7.9.2
+    container_name: dex-ganache
+    env_file:
+      - .env
+    ports:
+      - 8545:8545
+    command:
+      [
+        #"--fork", "https://bsc-dataseed1.defibit.io/",
+        "--fork", "https://bsc-dataseed.binance.org/",
+        "--chain.chainId", "56",
+        "--wallet.accounts", "${PRIVATE_KEY},10000000000000000000000",
+        "--miner.blockTime", "0",
+        "--logging.verbose"
+      ]
+    networks:
+      - dev-runtime
 
 #PancakeSwapLottery 0x5aF6D33DE2ccEC94efb1bDF8f92Bd58085432d2c
 
-  dex-current-server:
-    container_name: dex-current-server
-    restart: always
-    build:
-      context: ./
-      dockerfile: current_server/Dockerfile
-    volumes:
-      - ../Server:/mnt
-    ports:
-      - 9527:9527
-    environment:
-      - TZ=Asia/Shanghai
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    networks:
-      - dev-runtime
+  # dex-current-server:
+  #   container_name: dex-current-server
+  #   restart: always
+  #   build:
+  #     context: ./
+  #     dockerfile: current_server/Dockerfile
+  #   volumes:
+  #     - ../Server:/mnt
+  #   ports:
+  #     - 9527:9527
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   networks:
+  #     - dev-runtime
 
   # dex-prev-server:
   #   container_name: dex-prev-server

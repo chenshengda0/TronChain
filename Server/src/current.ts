@@ -441,7 +441,11 @@ const Common = Object.defineProperties( {
                 
                 const oneDocss = oneDocs.tos.map( (row:any) => row !== "TWzvWGHxDUXRtR7ACFaKUZbgbJDiM8Lvcd" )
                 console.log( JSON.stringify( oneDocs.tos ) )
+                
 
+                console.log( "TEy6MkHURZNZLnVD7xFdtxreUZth1cF63p", oneDocs.tops.includes( "TEy6MkHURZNZLnVD7xFdtxreUZth1cF63p" ) )
+                console.log( "THKJnBd5jpPEf3wzKgRbryRjhVL5ezpHPY", oneDocs.tops.includes( "THKJnBd5jpPEf3wzKgRbryRjhVL5ezpHPY" ) )
+                console.log( "TEHEPvizqvRnK8Do6wMDDeXNyFLnmHrzWC", oneDocs.tops.includes( "TEHEPvizqvRnK8Do6wMDDeXNyFLnmHrzWC" ) )
 
                 console.log( oneDocs.tos.length, oneDocss.length )
                 

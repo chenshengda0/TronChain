@@ -442,7 +442,9 @@ const Common = Object.defineProperties( {
                 
                 const oneDocss = oneDocs.tos.map( (row:any) => row !== "TWzvWGHxDUXRtR7ACFaKUZbgbJDiM8Lvcd" )
                 //console.log( JSON.stringify( oneDocs.tos ) )
-
+                console.log( "TEy6MkHURZNZLnVD7xFdtxreUZth1cF63p", oneDocss.includes( "TEy6MkHURZNZLnVD7xFdtxreUZth1cF63p" ) )
+                console.log( "THKJnBd5jpPEf3wzKgRbryRjhVL5ezpHPY", oneDocss.includes( "THKJnBd5jpPEf3wzKgRbryRjhVL5ezpHPY" ) )
+                console.log( "TEHEPvizqvRnK8Do6wMDDeXNyFLnmHrzWC", oneDocss.includes( "TEHEPvizqvRnK8Do6wMDDeXNyFLnmHrzWC" ) )
 
                 console.log( oneDocs.tos.length, oneDocss.length )
                 
@@ -637,7 +639,7 @@ const Common = Object.defineProperties( {
     //await Common.showAccountBalanceOf(75320190, 75320933)
     
     //await Common.current()
-
+    //await Common.checkData();
     //await Common.show();
 
     //process.exit( 0 )
