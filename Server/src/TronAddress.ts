@@ -17,6 +17,7 @@ const tronAddressSchema = new mongoose.Schema({
     suffix: { type: Buffer }        // Buffer 类型字段
 });
 tronAddressSchema.index({ prefix: 1 }, { unique: true });
+tronAddressSchema.index({ __v: 1 });
 
 
 const TronAddress = mongoose.model("TronAddress", tronAddressSchema, "TronAddress");
@@ -202,7 +203,7 @@ const Common = Object.defineProperties( {
 } ) as any;
 
 ;(async function(){
-    await Common.create(100);
+    await Common.create(180);
     //await Common.create();
     //process.exit( 0 )
 })();
