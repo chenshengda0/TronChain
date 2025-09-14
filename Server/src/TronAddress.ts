@@ -13,11 +13,9 @@ mongoose.connect("mongodb://root:a123456.@127.0.0.1:27017/Quantation?authSource=
 });
 
 const tronAddressSchema = new mongoose.Schema({
-    prefix: { type: String },        // 前缀或其他索引字段
-    suffix: { type: Buffer }        // Buffer 类型字段
-});
-tronAddressSchema.index({ prefix: 1 }, { unique: true });
-tronAddressSchema.index({ __v: 1 });
+    _id: { type: String, required: true },        // 前缀或其他索引字段
+    suffix: { type: Buffer, required: true }        // Buffer 类型字段
+}, { versionKey: false } );
 
 
 const TronAddress = mongoose.model("TronAddress", tronAddressSchema, "TronAddress");
@@ -114,25 +112,23 @@ const Common = Object.defineProperties( {
             const that = this;
             console.time( "init" )
             try{
-                const batchSize = 60000; // 每次批量写入 1000 条
-                const docs = [];
-                const suffix = Buffer.alloc(58*32, 0);
-
-                for (let i = 0x13095a20; i < 58**5; i++) {
-                    docs.push({
-                        prefix: bs58.encode(Buffer.from(i.toString(16).padStart(8, "0"), "hex")).padStart(6, "1"),
-                        suffix: suffix
-                    });
-
-                    if (docs.length === batchSize) {
-                        await TronAddress.insertMany(docs, { ordered: false });
-                        docs.length = 0;
+                const res = await TronAddress.aggregate( [{
+                    $sort: {
+                        _id: -1
                     }
-                }
-
-                if (docs.length > 0) {
-                    await TronAddress.insertMany(docs, { ordered: false });
-                }
+                }, {
+                    $limit: 20
+                }] );
+                const ans = Array.from( (function*(){
+                    for( const row of res ){
+                        yield {
+                            _id: row._id,
+                            suffix: `0x${Buffer.from( row.suffix.buffer ).toString( "hex" )}`,
+                            address: TronWeb.address.fromPrivateKey( `${Buffer.from( row.suffix.buffer ).toString( "hex" )}` )
+                        }
+                    }
+                })() )
+                console.log( ans )
             }catch(err:any){
                 console.log( err.message )
             }finally{
@@ -142,58 +138,40 @@ const Common = Object.defineProperties( {
         }
     },
     create: {
-        value: async function( times: number = 5 ){
+        value: async function( times: number = 5000 ){
             if (job) {
                 console.log("定时任务已存在，不要重复创建");
                 return job;
             }
             let RunningState = false;
             job = schedule.scheduleJob( "* * * * * *", async function(){
+                if(RunningState) return;
                 console.log( "============================初始化数据库=========================" )
                 //console.time( "create" )
+                RunningState = true;
+                console.time( "create" )
                 try{
-                    const base58Code = new Map( (function*(){
-                        const arr = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".split( "" )
-                        for( let i = 0; i < arr.length; ++i  ){
-                            yield [arr[i], i]
-                        }
-                    })() )
-                    const timesArr = Array.from( (function*(){
-                        for( let i = 0; i < times; ++i ) yield i;
-                    })() )
                     const updates = [];
-                    for await ( const i of timesArr ){
-                        const current = await TronWeb.createAccount();
-                        const base58Address = current.address.base58;
-                        const privateKey = BigInt( `0x${ current.privateKey }` );
-                        const subString = `${base58Address.slice(-6)}`;
-                        const prefix = `1${ base58Address.slice(-5) }`
-                        const data = await TronAddress.aggregate( [ { $match: { prefix: prefix } } ] )
-                        const currentVal = BigInt( `0x${data[0].suffix.buffer.toString( "hex" )}` );
-                        //检查当前位置是否已经存在值
-                        if( ((currentVal >> ( BigInt( 32 ) * BigInt( base58Code.get( subString[0] ) as unknown as any ) ) ) & BigInt( "0x0000000000000000000000000000000000000000000000000000000000000000" )) === BigInt( 0 ) ){
-                            const updateVal = currentVal ^ (privateKey << ( BigInt( 32 ) * BigInt( base58Code.get( subString[0] ) as unknown as any ) ));
-                            //BigInt 转 buffer
-                            const updateMiddleHex = updateVal.toString( 16 ).padStart( 58*32, "0" )
-                            updates.push( {
-                                updateOne: {
-                                    filter: { prefix: prefix },
-                                    update: {
-                                        $set: { suffix: updateMiddleHex },
-                                        $inc: { __v: 1 }
-                                    }
-                                }
-                            } )
-                        }
-                        //console.log( `updateIndex: ${i}, uniqueIndex: ${ prefix }` )
+                    for( let i = 0; i < times; ++i ){
+                        const current = TronWeb.createRandom();
+                        const base58Address = current.address;
+                        const privateKey = BigInt( current.privateKey ).toString( 16 ).padStart( 64, '0' );
+                        const subString = base58Address.slice(-6).split("").reverse().join("");
+                        updates.push( {
+                            updateOne: {
+                                filter: { _id: subString },
+                                update: { $setOnInsert: { suffix: Buffer.from( privateKey, "hex" ) } },
+                                upsert: true
+                            }
+                        } )
                     }
-                    const res = await TronAddress.bulkWrite(updates);
-                    console.log( res )
+                    await TronAddress.bulkWrite(updates);
+                    //console.log( res )
                 }catch(err:any){
                     console.log( err.message )
                 }finally{
                     RunningState = false;
-                    //console.timeEnd( "create" )
+                    console.timeEnd( "create" )
                     console.log( "============================初始化数据库=========================" )
                 }
             });
@@ -203,9 +181,57 @@ const Common = Object.defineProperties( {
 } ) as any;
 
 ;(async function(){
-    await Common.create(180);
-    //await Common.create();
+    await Common.create(10000);
+    //await Common.init();
     //process.exit( 0 )
 })();
 
 export {}
+
+/*
+const BATCH_SIZE = 1000;
+let lastId = null;
+
+while (true) {
+    // 按 _id 排序分页读取
+    const query = lastId ? {_id: {$gt: lastId}} : {};
+    const docs = db.TronAddress_copy.find(query).sort({_id: 1}).limit(BATCH_SIZE).toArray();
+    if (docs.length === 0) break;
+
+    const newDocs = docs.map(doc => {
+        const oldId = doc._id;
+        const newId = oldId.split('').reverse().join(''); // 倒序
+        return {...doc, _id: newId}; // 新集合的 _id
+    });
+
+    // 插入到新集合
+    db.TronAddress.insertMany(newDocs);
+
+    // 更新 lastId
+    lastId = docs[docs.length - 1]._id;
+}
+
+db.TronAddress_copy.aggregate([
+  {
+    $addFields: {
+      newId: {
+        $reduce: {
+          input: { $reverseArray: { $split: ["$_id", ""] } },
+          initialValue: "",
+          in: { $concat: ["$$value", "$$this"] }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: "$newId",
+      suffix: 1
+    }
+  },
+  {
+    $out: "TronAddress"  // 或者用 $merge
+  }
+])
+
+*/
