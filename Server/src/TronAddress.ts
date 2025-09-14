@@ -89,20 +89,6 @@ const modules = [
 ];
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-let job:any = null;
-
 const Common = Object.defineProperties( {
 
 }, {
@@ -139,12 +125,8 @@ const Common = Object.defineProperties( {
     },
     create: {
         value: async function( times: number = 5000 ){
-            if (job) {
-                console.log("定时任务已存在，不要重复创建");
-                return job;
-            }
             let RunningState = false;
-            job = schedule.scheduleJob( "* * * * * *", async function(){
+            return schedule.scheduleJob( "* * * * * *", async function(){
                 if(RunningState) return;
                 console.log( "============================初始化数据库=========================" )
                 //console.time( "create" )
@@ -175,7 +157,6 @@ const Common = Object.defineProperties( {
                     console.log( "============================初始化数据库=========================" )
                 }
             });
-            return job;
         }
     }
 } ) as any;
