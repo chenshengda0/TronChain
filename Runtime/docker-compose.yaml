@@ -21,24 +21,24 @@ services:
     networks:
       - dev-runtime
 
-  dex-ganache:
-    image: trufflesuite/ganache:v7.9.2
-    container_name: dex-ganache
-    env_file:
-      - .env
-    ports:
-      - 8545:8545
-    command:
-      [
-        #"--fork", "https://bsc-dataseed1.defibit.io/",
-        "--fork", "https://bsc-dataseed.binance.org/",
-        "--chain.chainId", "56",
-        "--wallet.accounts", "${PRIVATE_KEY},10000000000000000000000",
-        "--miner.blockTime", "0",
-        "--logging.verbose"
-      ]
-    networks:
-      - dev-runtime
+  # dex-ganache:
+  #   image: trufflesuite/ganache:v7.9.2
+  #   container_name: dex-ganache
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - 8545:8545
+  #   command:
+  #     [
+  #       #"--fork", "https://bsc-dataseed1.defibit.io/",
+  #       "--fork", "https://bsc-dataseed.binance.org/",
+  #       "--chain.chainId", "56",
+  #       "--wallet.accounts", "${PRIVATE_KEY},10000000000000000000000",
+  #       "--miner.blockTime", "0",
+  #       "--logging.verbose"
+  #     ]
+  #   networks:
+  #     - dev-runtime
 
 #PancakeSwapLottery 0x5aF6D33DE2ccEC94efb1bDF8f92Bd58085432d2c
 
